@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: scoreboard-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - scoreboard-network
+
+  app:
+    build: .
+    container_name: scoreboard-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=3000
+      - RATE_LIMIT_POINTS=10
+      - RATE_LIMIT_WINDOW_MS=1000
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    restart: unless-stopped
+    networks:
+      - scoreboard-network
+
+volumes:
+  redis-data:
+
+networks:
+  scoreboard-network:
+    driver: bridge 
